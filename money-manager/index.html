@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お金の貸し借り管理システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        :root {
+            /* デバイスの傾きで動的に変化するCSS変数 */
+            --gradient-x: 50%;
+            --gradient-y: 50%;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: radial-gradient(at var(--gradient-x) var(--gradient-y), #a6c0e8, #d1cbf4, #f2e2f3);
+            background-size: 200% 200%;
+            transition: background 0.5s ease-in-out;
+            color: #1a202c; /* Light mode text color */
+            overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+        }
+
+        .dark body {
+            background: radial-gradient(at var(--gradient-x) var(--gradient-y), #2c5364, #203a43, #0f2027);
+            background-size: 200% 200%;
+            color: #e2e8f0; /* Dark mode text color */
+        }
+
+        .container-glass,
+        .card-container,
+        .total-card,
+        .transaction-item,
+        .modal-glass {
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            background-color: rgba(255, 255, 255, 0.4); /* Light Mode */
+            transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .dark .container-glass,
+        .dark .card-container,
+        .dark .total-card,
+        .dark .transaction-item,
+        .dark .modal-glass {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 40px rgba(255, 255, 255, 0.1);
+        }
+
+        .card-container,
+        .transaction-item,
+        .total-card,
+        .input-glass {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+
+        .card-container:hover,
+        .transaction-item:hover,
+        .total-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
+        .dark .card-container:hover,
+        .dark .transaction-item:hover,
+        .dark .total-card:hover {
+            box-shadow: 0 12px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .blacklisted-user-card {
+            filter: grayscale(100%);
+            opacity: 0.7;
+        }
+        .repaid-transaction {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        /* Fluid and dynamic animations */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.9); }
+        }
+
+        .modal-fade-in {
+            animation: modalFadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .button-press {
+            animation: buttonPress 0.15s ease-out;
+        }
+        @keyframes buttonPress {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        .rotate-45 {
+            transform: rotate(45deg);
+        }
+    </style>
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3/dist/phosphor.js"></script>
+</head>
+<body class="flex flex-col items-center p-4 sm:p-8">
+    <button id="modeToggleBtn" class="fixed top-4 right-4 z-50 p-3 rounded-full shadow-lg transition-all border border-gray-200 dark:border-gray-800 bg-white/30 dark:bg-black/30 backdrop-blur-md hover:bg-white/50 dark:hover:bg-black/50 focus:outline-none">
+        <i id="modeIcon" class="ph-bold ph-sun text-2xl text-gray-800 dark:text-gray-200 transition-transform hover:scale-110"></i>
+    </button>
+    <div id="mainContainer" class="container-glass rounded-[48px] p-6 sm:p-10 shadow-xl my-8 max-w-2xl w-full mx-auto flex flex-col gap-6">
+        <h1 class="text-4xl font-extrabold text-center fade-in-up">マネーマネージャー</h1>
+
+        <!-- User Management Card -->
+        <div class="p-6 rounded-[32px] bg-white/20 dark:bg-black/20 shadow-inner fade-in-up" style="animation-delay: 0.1s;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">ユーザー</h2>
+                <button id="toggleAddUserBtn" class="p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all focus:outline-none transform-gpu">
+                    <span class="text-2xl transition-transform duration-300 ease-in-out" id="addUserIcon">➕</span>
+                </button>
+            </div>
+
+            <div id="addUserForm" class="hidden mb-4 flex gap-2">
+                <input type="text" id="addUserInput" placeholder="ユーザー名を追加" class="p-3 w-full rounded-full bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all input-glass">
+                <button id="confirmAddUserBtn" class="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none transition-all shadow-md">
+                    <i class="ph-bold ph-check text-xl"></i>
+                </button>
+            </div>
+
+            <div id="userCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- User cards will be injected here -->
+            </div>
+        </div>
+
+        <!-- Transaction and Repayment Card -->
+        <div class="p-6 rounded-[32px] bg-white/20 dark:bg-black/20 shadow-inner fade-in-up" style="animation-delay: 0.2s;">
+            <h2 class="text-2xl font-bold mb-4">取引</h2>
+
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                <input type="text" id="transactionNameInput" placeholder="誰との取引ですか？" class="p-3 w-full sm:w-1/3 rounded-full bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all input-glass">
+                <input type="number" id="amountInput" placeholder="金額 (円)" class="p-3 w-full sm:w-1/3 rounded-full bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all input-glass">
+                <div class="flex w-full sm:w-1/3 gap-2">
+                    <button id="addLentBtn" class="w-1/2 px-4 py-3 bg-green-500 text-white font-semibold rounded-full shadow-lg hover:bg-green-600 focus:outline-none transition-all">
+                        貸し
+                    </button>
+                    <button id="addBorrowedBtn" class="w-1/2 px-4 py-3 bg-red-500 text-white font-semibold rounded-full shadow-lg hover:bg-red-600 focus:outline-none transition-all">
+                        借り
+                    </button>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold mt-6 mb-4">全取引履歴</h3>
+            <ul id="allTransactions" class="space-y-3 max-h-80 overflow-y-auto pr-2">
+                <!-- All transaction items will be injected here -->
+            </ul>
+        </div>
+
+        <!-- Global Totals Card -->
+        <div class="p-6 rounded-[32px] bg-white/20 dark:bg-black/20 shadow-inner flex flex-col justify-center total-card fade-in-up" style="animation-delay: 0.3s;">
+            <h2 class="text-2xl font-bold text-center mb-4">合計金額</h2>
+            <div class="flex flex-col sm:flex-row justify-around items-center gap-4 text-center">
+                <div class="flex flex-col items-center">
+                    <span class="text-xl font-bold text-green-600 dark:text-green-400">貸し</span>
+                    <span id="lentTotal" class="text-4xl font-extrabold text-green-600 dark:text-green-400 mt-1">0円</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xl font-bold text-red-600 dark:text-red-400">借り</span>
+                    <span id="borrowedTotal" class="text-4xl font-extrabold text-red-600 dark:text-red-400 mt-1">0円</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (with glassmorphism) -->
+    <!-- 返済モーダル -->
+    <div id="repay-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="modal-glass p-8 rounded-3xl text-center w-11/12 sm:w-1/2 modal-fade-in">
+            <p class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-200">返済金額を入力してください</p>
+            <input type="number" id="repayAmountInput" placeholder="金額 (円)" class="p-3 w-full rounded-full bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all mb-4 input-glass">
+            <div class="flex justify-end gap-2">
+                <button id="confirmRepayBtn" class="px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all">返済</button>
+                <button id="cancelRepayBtn" class="px-4 py-2 bg-gray-400 text-white rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 取引編集モーダル -->
+    <div id="edit-transaction-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="modal-glass p-8 rounded-3xl w-11/12 sm:w-1/2 modal-fade-in">
+            <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-200">取引を編集</h3>
+            <div class="mb-4">
+                <label for="editTransactionNameInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">タイトル</label>
+                <input type="text" id="editTransactionNameInput" class="mt-1 block w-full p-3 rounded-md bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 input-glass">
+            </div>
+            <div class="mb-4">
+                <label for="editAmountInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">金額</label>
+                <input type="number" id="editAmountInput" class="mt-1 block w-full p-3 rounded-md bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 input-glass">
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="saveEditBtn" class="px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all">保存</button>
+                <button id="cancelEditBtn" class="px-4 py-2 bg-gray-400 text-white rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ユーザー編集モーダル -->
+    <div id="edit-user-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="modal-glass p-8 rounded-3xl w-11/12 sm:w-1/2 modal-fade-in">
+            <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-200">ユーザー名を編集</h3>
+            <div class="mb-4">
+                <label for="editUsernameInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">新しいユーザー名</label>
+                <input type="text" id="editUsernameInput" class="mt-1 block w-full p-3 rounded-md bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 input-glass">
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="saveUserEditBtn" class="px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all">保存</button>
+                <button id="cancelUserEditBtn" class="px-4 py-2 bg-gray-400 text-white rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ユーザー削除確認モーダル -->
+    <div id="delete-user-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="modal-glass p-8 rounded-3xl text-center w-11/12 sm:w-1/2 modal-fade-in">
+            <p class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-200">本当に<span id="delete-user-name" class="font-extrabold text-red-500 dark:text-red-400"></span>を削除しますか？<br>このユーザーのすべての取引も削除されます。</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirmDeleteUserBtn" class="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all">削除</button>
+                <button id="cancelDeleteUserBtn" class="px-6 py-2 bg-gray-400 text-white rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- メッセージモーダル -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="modal-glass p-8 rounded-3xl text-center w-11/12 sm:w-1/2 modal-fade-in">
+            <p id="message-text" class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-200"></p>
+            <button id="closeModalBtn" class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数の宣言
+        let users = [];
+        let transactions = [];
+        let selectedUserOldName = null;
+        let selectedUserToDelete = null;
+        let selectedTransactionId = null;
+
+        // DOM要素とステート変数の設定
+        const root = document.documentElement;
+        
+        // --- DOM Elements ---
+        const modeToggleBtn = document.getElementById('modeToggleBtn');
+        const modeIcon = document.getElementById('modeIcon');
+        const userCardsContainer = document.getElementById('userCardsContainer');
+        const toggleAddUserBtn = document.getElementById('toggleAddUserBtn');
+        const addUserForm = document.getElementById('addUserForm');
+        const addUserInput = document.getElementById('addUserInput');
+        const confirmAddUserBtn = document.getElementById('confirmAddUserBtn');
+        const transactionNameInput = document.getElementById('transactionNameInput');
+        const amountInput = document.getElementById('amountInput');
+        const addLentBtn = document.getElementById('addLentBtn');
+        const addBorrowedBtn = document.getElementById('addBorrowedBtn');
+        const allTransactionsList = document.getElementById('allTransactions');
+        const lentTotalSpan = document.getElementById('lentTotal');
+        const borrowedTotalSpan = document.getElementById('borrowedTotal');
+        const repayModal = document.getElementById('repay-modal');
+        const repayAmountInput = document.getElementById('repayAmountInput');
+        const confirmRepayBtn = document.getElementById('confirmRepayBtn');
+        const cancelRepayBtn = document.getElementById('cancelRepayBtn');
+        const editTransactionModal = document.getElementById('edit-transaction-modal');
+        const editTransactionNameInput = document.getElementById('editTransactionNameInput');
+        const editAmountInput = document.getElementById('editAmountInput');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const editUserModal = document.getElementById('edit-user-modal');
+        const editUsernameInput = document.getElementById('editUsernameInput');
+        const saveUserEditBtn = document.getElementById('saveUserEditBtn');
+        const cancelUserEditBtn = document.getElementById('cancelUserEditBtn');
+        const deleteUserModal = document.getElementById('delete-user-modal');
+        const deleteUserNameSpan = document.getElementById('delete-user-name');
+        const confirmDeleteUserBtn = document.getElementById('confirmDeleteUserBtn');
+        const cancelDeleteUserBtn = document.getElementById('cancelDeleteUserBtn');
+        const messageModal = document.getElementById('message-modal');
+        const messageText = document.getElementById('message-text');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const addUserIcon = document.getElementById('addUserIcon');
+
+        // ユーザーカードのカラーパレット
+        const colorPalette = [
+            { a: '#7d61ff', b: '#93a3ff' },
+            { a: '#34d399', b: '#22c55e' },
+            { a: '#fbbf24', b: '#f59e0b' },
+            { a: '#f87171', b: '#ef4444' },
+            { a: '#22d3ee', b: '#67e8f9' },
+            { a: '#a78bfa', b: '#8b5cf6' },
+            { a: '#fb923c', b: '#f97316' },
+            { a: '#60a5fa', b: '#3b82f6' }
+        ];
+
+        // --- Core Functions: Data Management ---
+
+        // ローカルストレージからのデータ読み込み
+        const loadData = () => {
+            const storedUsers = localStorage.getItem('money_users_v2');
+            if (storedUsers) {
+                users = JSON.parse(storedUsers);
+            }
+            const storedTransactions = localStorage.getItem('money_transactions_v2');
+            if (storedTransactions) {
+                transactions = JSON.parse(storedTransactions);
+            }
+        };
+
+        // ローカルストレージへのデータ保存
+        const saveData = () => {
+            localStorage.setItem('money_users_v2', JSON.stringify(users));
+            localStorage.setItem('money_transactions_v2', JSON.stringify(transactions));
+        };
+
+        // UI全体の再描画
+        const renderUI = () => {
+            renderUserCards();
+            renderAllTransactions();
+            renderTotals();
+        };
+
+        // --- Rendering Functions ---
+
+        // ユーザーカードの描画
+        const renderUserCards = () => {
+            userCardsContainer.innerHTML = '';
+
+            if (users.length === 0) {
+                userCardsContainer.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400 col-span-1 sm:col-span-2">右上の➕ボタンからユーザーを追加してください。</p>`;
+                return;
+            }
+
+            users.forEach((user, index) => {
+                const userLent = transactions.filter(t => t.name === user.name && t.type === 'lent' && !t.isRepaid).reduce((sum, t) => sum + t.amount, 0);
+                const userBorrowed = transactions.filter(t => t.name === user.name && t.type === 'borrowed' && !t.isRepaid).reduce((sum, t) => sum + t.amount, 0);
+                const netBalance = userLent - userBorrowed;
+                const balanceColor = netBalance >= 0 ? 'text-green-300' : 'text-red-300';
+                const color = colorPalette[index % colorPalette.length];
+                const card = document.createElement('div');
+
+                card.className = `card-container p-6 rounded-[32px] text-white overflow-hidden shadow-md relative fade-in-up ${user.isBlacklisted ? 'blacklisted-user-card' : ''}`;
+                card.style.animationDelay = `${index * 0.05}s`;
+                card.style.background = `linear-gradient(135deg, ${color.a}, ${color.b})`;
+
+                card.innerHTML = `
+                    <div class="flex flex-col items-start w-full">
+                        <div class="flex justify-between items-center w-full mb-4">
+                            <h3 class="text-2xl font-bold truncate">${user.name}</h3>
+                            <div class="flex gap-2">
+                                <button class="edit-user-btn bg-white/20 hover:bg-white/40 rounded-full w-8 h-8 flex items-center justify-center transition-all action-button" data-name="${user.name}">
