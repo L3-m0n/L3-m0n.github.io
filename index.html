@@ -595,19 +595,23 @@
       catch (e) { loginMsg.textContent = 'ログインに失敗しました（メール/パスワードを確認）'; }
     });
 
-    // 新規作成＋確認メール
-    signupBtn?.addEventListener('click', async () => {
-      loginMsg.textContent = '';
-      try {
-        await createUserWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
-        try { await sendEmailVerification(auth.currentUser); } catch(_) {}
-        const ref = doc(db, 'connhlem', auth.currentUser.uid);
-        await setDoc(ref, { users: [], transactions: [], updatedAt: Date.now() }, { merge: true });
-        loginMsg.textContent = 'アカウント作成。確認メールを送信しました。メール内リンク確認後にログインしてください。';
-      } catch (e) {
-        loginMsg.textContent = 'アカウント作成に失敗しました（既に使われている可能性）。';
-      }
-    });
+// 新規作成＋確認メール
+signupBtn?.addEventListener('click', async () => {
+  loginMsg.textContent = '';
+  try {
+    await createUserWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
+    try { await sendEmailVerification(auth.currentUser); } catch(_) {}
+    const ref = doc(db, 'connhlem', auth.currentUser.uid);
+    await setDoc(ref, { users: [], transactions: [], updatedAt: Date.now() }, { merge: true });
+-   loginMsg.textContent = 'アカウント作成OK。確認メールを送信しました（メールのリンクを開いてください）。';
++   loginMsg.textContent = 'アカウント作成OK。確認メールを送信しました（メールのリンクを開いてください）。';
+  } catch (e) {
+-   loginMsg.textContent = 'アカウント作成に失敗しました（既に使われている可能性）。';
++   loginMsg.textContent = `登録失敗: ${e.code}`;
++   console.error(e);
+  }
+});
+
 
     // パスワード再発行
     forgotLink?.addEventListener('click', async () => {
@@ -682,3 +686,4 @@
   </script>
 </body>
 </html>
+
