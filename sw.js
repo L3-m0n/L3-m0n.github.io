@@ -1,5 +1,5 @@
-// GitHub Pages 用：相対パス前提・キャッシュ名は変更すると更新がかかります
-const STATIC_CACHE = 'static-v3';
+// GitHub Pages 用：相対パス前提・キャッシュ名を変えると更新がかかります
+const STATIC_CACHE = 'static-v4';
 const STATIC_ASSETS = [
   '.',                 // ルート
   'index.html',
