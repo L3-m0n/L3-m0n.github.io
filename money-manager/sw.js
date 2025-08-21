@@ -1,24 +1,22 @@
 const STATIC_CACHE = 'static-v1';
 const STATIC_ASSETS = [
   '.', 'index.html', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png',
+  'icons/icon.png',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/@phosphor-icons/web@2.0.3/dist/phosphor.js'
 ];
 
-self.addEventListener('install', (e) => {
+self.addEventListener('install', e => {
   e.waitUntil(caches.open(STATIC_CACHE).then(c => c.addAll(STATIC_ASSETS)));
 });
-
-self.addEventListener('activate', (e) => {
+self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== STATIC_CACHE).map(k => caches.delete(k)))
     )
   );
 });
-
-self.addEventListener('fetch', (e) => {
+self.addEventListener('fetch', e => {
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request).then(r => {
