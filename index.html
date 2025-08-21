@@ -8,7 +8,7 @@
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- PWA: GitHub Pages用に相対パス -->
+  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#3b82f6" />
   <link rel="apple-touch-icon" href="icons/icon.png" />
@@ -220,7 +220,7 @@
     </div>
   </div>
 
-  <!-- ===== アプリ本体スクリプト（ローカル保存＋UI） ===== -->
+  <!-- ===== アプリ本体（ローカル保存＋UI） ===== -->
   <script>
     // 状態
     let users = [];
@@ -294,7 +294,7 @@
       localStorage.setItem('money_users_v2', JSON.stringify(users));
       localStorage.setItem('money_transactions_v2', JSON.stringify(transactions));
     };
-    window.saveData = saveData; // Firebase から上書きするため公開
+    window.saveData = saveData; // Firebase で上書きするため公開
 
     // レンダリング
     const renderTotals = () => {
@@ -326,10 +326,10 @@
             <div class="flex justify-between items-center w-full mb-4">
               <h3 class="text-2xl font-bold truncate">${user.name}</h3>
               <div class="flex gap-2">
-                <button class="edit-user-btn bg白/20 hover:bg白/40 rounded-full w-8 h-8 flex items-center justify-center transition-all" data-name="${user.name}" title="編集">
+                <button class="edit-user-btn bg-white/20 hover:bg-white/40 rounded-full w-8 h-8 flex items-center justify-center transition-all" data-name="${user.name}" title="編集">
                   <i class="ph ph-pencil"></i>
                 </button>
-                <button class="delete-user-btn bg白/20 hover:bg白/40 rounded-full w-8 h-8 flex items-center justify-center transition-all" data-name="${user.name}" title="削除">
+                <button class="delete-user-btn bg-white/20 hover:bg-white/40 rounded-full w-8 h-8 flex items-center justify-center transition-all" data-name="${user.name}" title="削除">
                   <i class="ph ph-trash"></i>
                 </button>
               </div>
@@ -538,7 +538,7 @@
       modeIcon.classList.toggle('ph-moon', isDark);
     });
 
-    // Service Worker（相対パス）
+    // Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js');
@@ -546,9 +546,9 @@
     }
   </script>
 
-  <!-- ===== Firebase 接続＆同期（CDN / ConnHlem用） ===== -->
+  <!-- ===== Firebase 接続＆同期（デバッグ表示付き） ===== -->
   <script type="module">
-    // --- フェイルセーフ: 1秒で初期化できなければ loginBox を表示 ---
+    // フェイルセーフ：1秒で初期化できなければログイン枠を表示
     setTimeout(() => {
       if (!window.__authReady) {
         const box = document.getElementById('loginBox');
@@ -583,6 +583,13 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
+    // ステータス（左下）
+    const statusDiv = document.createElement('div');
+    statusDiv.style.cssText = 'position:fixed;bottom:10px;left:10px;font-size:12px;background:rgba(0,0,0,.55);color:#fff;padding:6px 8px;border-radius:8px;z-index:60';
+    statusDiv.textContent = 'Auth: 初期化中';
+    document.body.appendChild(statusDiv);
+    const setStatus = (t) => statusDiv.textContent = t;
+
     // 既存関数を保持
     const _saveLocal = window.saveData;
     const _renderUI  = window.renderUI;
@@ -597,7 +604,7 @@
     const forgotLink = document.getElementById('forgotLink');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // ログイン（エラーコード表示）
+    // ログイン
     loginBtn?.addEventListener('click', async () => {
       loginMsg.textContent = '';
       try {
@@ -608,7 +615,7 @@
       }
     });
 
-    // 新規作成＋確認メール（エラーコード表示）
+    // 新規作成
     signupBtn?.addEventListener('click', async () => {
       loginMsg.textContent = '';
       try {
@@ -643,6 +650,7 @@
       if (!user) {
         loginBox?.classList.remove('hidden'); loginBox?.classList.add('flex');
         logoutBtn?.classList.add('hidden');
+        setStatus('Auth: 未ログイン');
         return;
       }
 
@@ -657,6 +665,7 @@
       */
 
       // ログイン成功
+      setStatus(`Auth: ${user.uid} / ${user.email || '(no email)'}`);
       loginBox?.classList.add('hidden'); loginBox?.classList.remove('flex');
       logoutBtn?.classList.remove('hidden');
 
@@ -664,7 +673,7 @@
 
       // クラウド → UIへ自動反映
       onSnapshot(ref, (snap) => {
-        if (!snap.exists()) return;
+        if (!snap.exists()) { setStatus(`Auth: ${user.uid} / ドキュメント未作成`); return; }
         const d = snap.data();
         syncing = true;
         window.users = Array.isArray(d.users) ? d.users : [];
@@ -672,12 +681,15 @@
         _saveLocal && _saveLocal();
         _renderUI && _renderUI();
         syncing = false;
+        setStatus(`受信 OK / users:${(d.users?.length||0)} tx:${(d.transactions?.length||0)}`);
+        console.log('[onSnapshot] 受信', d);
       });
 
       // 初回：クラウドが空なら手元データをアップ
       const cur = await getDoc(ref);
       if (!cur.exists()) {
         await setDoc(ref, { users: window.users||[], transactions: window.transactions||[], updatedAt: Date.now() }, { merge: true });
+        setStatus('初回アップロード完了');
       }
     });
 
@@ -690,9 +702,12 @@
         if (user) {
           const ref = doc(db, 'connhlem', user.uid);
           await setDoc(ref, { users: window.users||[], transactions: window.transactions||[], updatedAt: Date.now() }, { merge: true });
+          setStatus(`送信 OK / users:${users.length} tx:${transactions.length}`);
+          console.log('[saveData] 送信', { users, transactions });
         }
       } catch (e) {
         console.warn('オンライン保存に失敗（後で再同期されます）', e);
+        setStatus('送信失敗: Console参照');
       }
     };
 
