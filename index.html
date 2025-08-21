@@ -83,9 +83,13 @@
         <button id="signupBtn" class="flex-1 py-2 rounded bg-gray-700 text-white">新規作成</button>
       </div>
       <p id="loginMsg" class="text-sm text-red-600 mt-3"></p>
+      <p class="mt-3 text-sm text-blue-600 underline cursor-pointer" id="forgotLink">パスワードを忘れた？</p>
     </div>
   </div>
   <!-- ▲ ConnHlem ログイン画面 -->
+
+  <!-- ログアウト（表示はログイン時のみ） -->
+  <button id="logoutBtn" class="fixed top-4 left-4 z-40 px-3 py-2 rounded-full bg-gray-700 text-white hidden">ログアウト</button>
 
   <!-- ダークモード切り替え -->
   <button id="modeToggleBtn" class="fixed top-4 right-4 z-40 p-3 rounded-full shadow-lg transition-all border border-gray-200 dark:border-gray-800 bg-white/30 dark:bg-black/30 backdrop-blur-md hover:bg-white/50 dark:hover:bg-black/50 focus:outline-none">
@@ -180,16 +184,16 @@
   </div>
 
   <!-- ユーザー編集モーダル -->
-  <div id="edit-user-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify-center z-10">
+  <div id="edit-user-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify中心 z-10">
     <div class="modal-glass p-8 rounded-3xl w-11/12 sm:w-1/2 modal-fade-in">
       <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-200">ユーザー名を編集</h3>
       <div class="mb-4">
         <label for="editUsernameInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">新しいユーザー名</label>
-        <input type="text" id="editUsernameInput" class="mt-1 block w-full p-3 rounded-md bg-white/50 dark:bg黒/50 border-white/20 dark:border-black/20 border-2 input-glass" />
+        <input type="text" id="editUsernameInput" class="mt-1 block w-full p-3 rounded-md bg-white/50 dark:bg-black/50 border-white/20 dark:border-black/20 border-2 input-glass" />
       </div>
       <div class="flex justify-end gap-2">
-        <button id="saveUserEditBtn" class="px-4 py-2 bg-green-500 text白 rounded-full hover:bg-green-600 transition-all">保存</button>
-        <button id="cancelUserEditBtn" class="px-4 py-2 bg-gray-400 text白 rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
+        <button id="saveUserEditBtn" class="px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all">保存</button>
+        <button id="cancelUserEditBtn" class="px-4 py-2 bg-gray-400 text-white rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
       </div>
     </div>
   </div>
@@ -202,8 +206,8 @@
         このユーザーのすべての取引も削除されます。
       </p>
       <div class="flex justify-center gap-4">
-        <button id="confirmDeleteUserBtn" class="px-6 py-2 bg-red-500 text白 rounded-full hover:bg-red-600 transition-all">削除</button>
-        <button id="cancelDeleteUserBtn" class="px-6 py-2 bg-gray-400 text白 rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
+        <button id="confirmDeleteUserBtn" class="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all">削除</button>
+        <button id="cancelDeleteUserBtn" class="px-6 py-2 bg-gray-400 text-white rounded-full hover:bg-gray-500 transition-all">キャンセル</button>
       </div>
     </div>
   </div>
@@ -212,7 +216,7 @@
   <div id="message-modal" class="fixed inset-0 bg-gray-600/30 backdrop-blur-sm hidden items-center justify-center z-10">
     <div class="modal-glass p-8 rounded-3xl text-center w-11/12 sm:w-1/2 modal-fade-in">
       <p id="message-text" class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-200"></p>
-      <button id="closeModalBtn" class="px-4 py-2 bg-blue-500 text白 rounded-full hover:bg-blue-600 transition-all">OK</button>
+      <button id="closeModalBtn" class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all">OK</button>
     </div>
   </div>
 
@@ -263,8 +267,8 @@
     const cancelDeleteUserBtn = document.getElementById('cancelDeleteUserBtn');
 
     const messageModal = document.getElementById('message-modal');
-    const messageText = document.getElementById('message-text');
-    const closeModalBtn = document.getElementById('closeModalBtn');
+    const messageText  = document.getElementById('message-text');
+    const closeModalBtn= document.getElementById('closeModalBtn');
 
     const addUserIcon = document.getElementById('addUserIcon');
 
@@ -325,7 +329,7 @@
                 <button class="edit-user-btn bg-white/20 hover:bg-white/40 rounded-full w-8 h-8 flex items-center justify-center transition-all" data-name="${user.name}" title="編集">
                   <i class="ph ph-pencil"></i>
                 </button>
-                <button class="delete-user-btn bg白/20 hover:bg白/40 rounded-full w-8 h-8 flex items-center justify-center transition-all" data-name="${user.name}" title="削除">
+                <button class="delete-user-btn bg-white/20 hover:bg-white/40 rounded-full w-8 h-8 flex items-center justify-center transition-all" data-name="${user.name}" title="削除">
                   <i class="ph ph-trash"></i>
                 </button>
               </div>
@@ -385,9 +389,9 @@
               <span class="text-xs opacity-60">${new Date(t.createdAt).toLocaleString()}</span>
             </div>
             <div class="flex gap-2">
-              <button class="repay-btn px-3 py-1 rounded-full bg-emerald-500 text白 hover:bg-emerald-600" data-id="${t.id}">返済</button>
-              <button class="edit-btn px-3 py-1 rounded-full bg-blue-500 text白 hover:bg-blue-600" data-id="${t.id}">編集</button>
-              <button class="del-btn px-3 py-1 rounded-full bg-gray-500 text白 hover:bg-gray-600" data-id="${t.id}">削除</button>
+              <button class="repay-btn px-3 py-1 rounded-full bg-emerald-500 text-white hover:bg-emerald-600" data-id="${t.id}">返済</button>
+              <button class="edit-btn px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600" data-id="${t.id}">編集</button>
+              <button class="del-btn px-3 py-1 rounded-full bg-gray-500 text-white hover:bg-gray-600" data-id="${t.id}">削除</button>
             </div>
           `;
           allTransactionsList.appendChild(li);
@@ -427,10 +431,7 @@
     };
     window.renderUI = renderUI; // Firebaseから呼べるよう公開
 
-    // ユーティリティ
-    const messageModal = document.getElementById('message-modal');
-    const messageText  = document.getElementById('message-text');
-    const closeModalBtn= document.getElementById('closeModalBtn');
+    // ユーティリティ（メッセージ）
     const showMessage = (msg) => {
       messageText.textContent = msg;
       messageModal.classList.remove('hidden'); messageModal.classList.add('flex');
@@ -449,12 +450,12 @@
     });
 
     // UIイベント
-    document.getElementById('toggleAddUserBtn').addEventListener('click', ()=>{
+    toggleAddUserBtn.addEventListener('click', ()=>{
       addUserForm.classList.toggle('hidden');
       addUserIcon.classList.toggle('rotate-45');
       addUserInput.focus();
     });
-    document.getElementById('confirmAddUserBtn').addEventListener('click', ()=>{
+    confirmAddUserBtn.addEventListener('click', ()=>{
       const name = (addUserInput.value || '').trim();
       if (!name) return showMessage('ユーザー名を入力してください。');
       if (users.some(u=>u.name===name)) return showMessage('同名のユーザーが既にいます。');
@@ -480,7 +481,8 @@
     }
 
     // 返済
-    document.getElementById('confirmRepayBtn').addEventListener('click', ()=>{
+    function hideRepay(){ repayModal.classList.add('hidden'); repayModal.classList.remove('flex'); }
+    confirmRepayBtn.addEventListener('click', ()=>{
       const t = transactions.find(x=>x.id===selectedTransactionId);
       if (!t) return hideRepay();
       const pay = Number(repayAmountInput.value);
@@ -488,11 +490,11 @@
       if (pay >= t.amount) { t.amount = 0; t.isRepaid = true; } else { t.amount -= pay; }
       saveData(); renderUI(); hideRepay();
     });
-    document.getElementById('cancelRepayBtn').addEventListener('click', hideRepay);
-    function hideRepay(){ repayModal.classList.add('hidden'); repayModal.classList.remove('flex'); }
+    cancelRepayBtn.addEventListener('click', hideRepay);
 
     // 取引編集
-    document.getElementById('saveEditBtn').addEventListener('click', ()=>{
+    function hideEdit(){ editTransactionModal.classList.add('hidden'); editTransactionModal.classList.remove('flex'); }
+    saveEditBtn.addEventListener('click', ()=>{
       const t = transactions.find(x=>x.id===selectedTransactionId);
       if (!t) return hideEdit();
       const name = (editTransactionNameInput.value||'').trim();
@@ -502,11 +504,11 @@
       t.name = name; t.amount = amount;
       saveData(); renderUI(); hideEdit();
     });
-    document.getElementById('cancelEditBtn').addEventListener('click', hideEdit);
-    function hideEdit(){ editTransactionModal.classList.add('hidden'); editTransactionModal.classList.remove('flex'); }
+    cancelEditBtn.addEventListener('click', hideEdit);
 
     // ユーザー編集
-    document.getElementById('saveUserEditBtn').addEventListener('click', ()=>{
+    function hideEditUser(){ editUserModal.classList.add('hidden'); editUserModal.classList.remove('flex'); }
+    saveUserEditBtn.addEventListener('click', ()=>{
       const newName = (editUsernameInput.value||'').trim();
       if (!newName) return showMessage('新しいユーザー名を入力してください。');
       if (users.some(u=>u.name===newName) && newName!==selectedUserOldName) return showMessage('同名のユーザーが既にいます。');
@@ -515,21 +517,20 @@
       transactions.forEach(t=>{ if (t.name===selectedUserOldName) t.name=newName; });
       saveData(); renderUI(); hideEditUser();
     });
-    document.getElementById('cancelUserEditBtn').addEventListener('click', hideEditUser);
-    function hideEditUser(){ editUserModal.classList.add('hidden'); editUserModal.classList.remove('flex'); }
+    cancelUserEditBtn.addEventListener('click', hideEditUser);
 
     // ユーザー削除
-    document.getElementById('confirmDeleteUserBtn').addEventListener('click', ()=>{
+    function hideDeleteUser(){ deleteUserModal.classList.add('hidden'); deleteUserModal.classList.remove('flex'); }
+    confirmDeleteUserBtn.addEventListener('click', ()=>{
       if (!selectedUserToDelete) return hideDeleteUser();
       users = users.filter(u=>u.name!==selectedUserToDelete);
       transactions = transactions.filter(t=>t.name!==selectedUserToDelete);
       saveData(); renderUI(); hideDeleteUser();
     });
-    document.getElementById('cancelDeleteUserBtn').addEventListener('click', hideDeleteUser);
-    function hideDeleteUser(){ deleteUserModal.classList.add('hidden'); deleteUserModal.classList.remove('flex'); }
+    cancelDeleteUserBtn.addEventListener('click', hideDeleteUser);
 
     // ダークモード
-    document.getElementById('modeToggleBtn').addEventListener('click', ()=>{
+    modeToggleBtn.addEventListener('click', ()=>{
       document.documentElement.classList.toggle('dark');
       const isDark = document.documentElement.classList.contains('dark');
       localStorage.setItem('money_theme', isDark?'dark':'light');
@@ -548,7 +549,15 @@
   <!-- ===== Firebase 接続＆同期（CDN / ConnHlem用） ===== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut,
+      sendPasswordResetEmail,
+      sendEmailVerification
+    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -576,32 +585,60 @@
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
     const loginMsg = document.getElementById('loginMsg');
+    const forgotLink = document.getElementById('forgotLink');
+    const logoutBtn = document.getElementById('logoutBtn');
 
+    // ログイン
     loginBtn?.addEventListener('click', async () => {
       loginMsg.textContent = '';
       try { await signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value); }
       catch (e) { loginMsg.textContent = 'ログインに失敗しました（メール/パスワードを確認）'; }
     });
 
+    // 新規作成＋確認メール
     signupBtn?.addEventListener('click', async () => {
       loginMsg.textContent = '';
       try {
         await createUserWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
+        try { await sendEmailVerification(auth.currentUser); } catch(_) {}
         const ref = doc(db, 'connhlem', auth.currentUser.uid);
         await setDoc(ref, { users: [], transactions: [], updatedAt: Date.now() }, { merge: true });
+        loginMsg.textContent = 'アカウント作成。確認メールを送信しました。メール内リンク確認後にログインしてください。';
       } catch (e) {
-        loginMsg.textContent = 'アカウント作成に失敗しました（既に使われている可能性）';
+        loginMsg.textContent = 'アカウント作成に失敗しました（既に使われている可能性）。';
       }
     });
 
+    // パスワード再発行
+    forgotLink?.addEventListener('click', async () => {
+      const email = (loginEmail?.value || '').trim();
+      if (!email) { loginMsg.textContent = '再発行するメールアドレスを入力してください。'; return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        loginMsg.textContent = 'パスワード再設定メールを送信しました。メールを確認してください。';
+      } catch (e) {
+        loginMsg.textContent = '送信に失敗しました。メールアドレスを確認してください。';
+      }
+    });
+
+    // 認証状態
     let syncing = false;
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         loginBox?.classList.remove('hidden'); loginBox?.classList.add('flex');
+        logoutBtn?.classList.add('hidden');
         return;
       }
+      if (!user.emailVerified) {
+        loginMsg.textContent = 'メールアドレスの確認が必要です。メール内のリンクを開いた後にログインしてください。';
+        loginBox?.classList.remove('hidden'); loginBox?.classList.add('flex');
+        logoutBtn?.classList.add('hidden');
+        return;
+      }
+
       // ログイン成功
       loginBox?.classList.add('hidden'); loginBox?.classList.remove('flex');
+      logoutBtn?.classList.remove('hidden');
 
       const ref = doc(db, 'connhlem', user.uid);
 
@@ -639,7 +676,8 @@
       }
     };
 
-    // 任意：ログアウト関数
+    // ログアウト
+    logoutBtn?.addEventListener('click', () => signOut(auth));
     window.appLogout = () => signOut(auth);
   </script>
 </body>
