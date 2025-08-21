@@ -603,37 +603,19 @@
       try {
         await signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
       } catch (e) {
-        loginMsg.textContent = `ログイン失敗: ${e.code}`;
+-        loginMsg.textContent = `ログイン失敗: ${e.code}`;
++        loginMsg.textContent = `ログイン失敗: ${e.code}`;
         console.error(e);
       }
     });
 
-    // 新規作成＋確認メール（エラーコード表示）
-    signupBtn?.addEventListener('click', async () => {
-      loginMsg.textContent = '';
-      try {
-        await createUserWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
-        try { await sendEmailVerification(auth.currentUser); } catch(_) {}
-        const ref = doc(db, 'connhlem', auth.currentUser.uid);
-        await setDoc(ref, { users: [], transactions: [], updatedAt: Date.now() }, { merge: true });
-        loginMsg.textContent = 'アカウント作成OK。確認メールを送信しました（メールのリンクを開いてください）。';
-      } catch (e) {
-        loginMsg.textContent = `登録失敗: ${e.code}`;
-        console.error(e);
-      }
-    });
-
-    // パスワード再発行
-    forgotLink?.addEventListener('click', async () => {
-      const email = (loginEmail?.value || '').trim();
-      if (!email) { loginMsg.textContent = '再発行するメールアドレスを入力してください。'; return; }
-      try {
-        await sendPasswordResetEmail(auth, email);
-        loginMsg.textContent = 'パスワード再設定メールを送信しました。メールを確認してください。';
-      } catch (e) {
-        loginMsg.textContent = '送信に失敗しました。メールアドレスを確認してください。';
-      }
-    });
++   // 画面に現在のUIDと最終同期時刻を簡易表示
++   const statusDiv = document.createElement('div');
++   statusDiv.id = 'cloudStatus';
++   statusDiv.style.cssText = 'position:fixed;bottom:10px;left:10px;font-size:12px;background:rgba(0,0,0,.4);color:#fff;padding:6px 8px;border-radius:8px;z-index:60';
++   statusDiv.textContent = 'Auth: 未ログイン';
++   document.body.appendChild(statusDiv);
++   function setStatus(text){ statusDiv.textContent = text; }
 
     // 認証状態
     let syncing = false;
@@ -643,18 +625,14 @@
       if (!user) {
         loginBox?.classList.remove('hidden'); loginBox?.classList.add('flex');
         logoutBtn?.classList.add('hidden');
++       setStatus('Auth: 未ログイン');
         return;
       }
 
++     setStatus(`Auth: ${user.uid} / 待機中`);
+
       // メール確認を有効にする場合は以下をコメント解除
-      /*
-      if (!user.emailVerified) {
-        loginMsg.textContent = 'メールアドレスの確認が必要です。メール内のリンクを開いた後にログインしてください。';
-        loginBox?.classList.remove('hidden'); loginBox?.classList.add('flex');
-        logoutBtn?.classList.add('hidden');
-        return;
-      }
-      */
+      /* ... 省略 ... */
 
       // ログイン成功
       loginBox?.classList.add('hidden'); loginBox?.classList.remove('flex');
@@ -664,7 +642,10 @@
 
       // クラウド → UIへ自動反映
       onSnapshot(ref, (snap) => {
-        if (!snap.exists()) return;
+        if (!snap.exists()) {
++         setStatus(`Auth: ${user.uid} / ドキュメント未作成`);
+          return;
+        }
         const d = snap.data();
         syncing = true;
         window.users = Array.isArray(d.users) ? d.users : [];
@@ -672,12 +653,15 @@
         _saveLocal && _saveLocal();
         _renderUI && _renderUI();
         syncing = false;
++       setStatus(`Auth: ${user.uid} / 受信 ${ (d.users?.length||0) } users, ${ (d.transactions?.length||0) } tx @ ${new Date().toLocaleTimeString()}`);
++       console.log('[onSnapshot] 受信', d);
       });
 
       // 初回：クラウドが空なら手元データをアップ
       const cur = await getDoc(ref);
       if (!cur.exists()) {
         await setDoc(ref, { users: window.users||[], transactions: window.transactions||[], updatedAt: Date.now() }, { merge: true });
++       setStatus(`Auth: ${user.uid} / 初回アップロード完了 @ ${new Date().toLocaleTimeString()}`);
       }
     });
 
@@ -690,15 +674,10 @@
         if (user) {
           const ref = doc(db, 'connhlem', user.uid);
           await setDoc(ref, { users: window.users||[], transactions: window.transactions||[], updatedAt: Date.now() }, { merge: true });
++         setStatus(`Auth: ${user.uid} / 送信 ${ users.length } users, ${ transactions.length } tx @ ${new Date().toLocaleTimeString()}`);
++         console.log('[saveData] 送信', { users, transactions });
         }
       } catch (e) {
         console.warn('オンライン保存に失敗（後で再同期されます）', e);
       }
     };
-
-    // ログアウト
-    logoutBtn?.addEventListener('click', () => signOut(auth));
-    window.appLogout = () => signOut(auth);
-  </script>
-</body>
-</html>
